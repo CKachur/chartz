@@ -1,131 +1,128 @@
 <template>
     <div id="app">
-        <LineChart
-            :data="lineData"
-            :options="lineOptions"
-            :width="600"
-            :height="400" />
-        <BarChart
-            :data="barData"
-            :options="barOptions"
-            :width="600"
-            :height="400" />
+        <div class="chart-content">
+            <div class="chart-content-list">
+                <h2>Datasets</h2>
+                <button v-on:click="fetchDatasets">Refresh</button>
+                <p v-if="datasetError">Cannot retrieve datasets</p>
+                <div v-for="dataset in datasets" v-on:click="displayDataset(dataset.name)">
+                    <p>{{ dataset.name }}</p>
+                </div>
+
+                <h2>Charts</h2>
+                <button v-on:click="fetchCharts">Refresh</button>
+                <p v-if="chartError">Cannot retrieve charts</p>
+                <div v-for="chart in charts" v-on:click="displayChart(chart.name)">
+                    <p>{{ chart.name }}</p>
+                </div>
+            </div>
+            <div class="chart-content-display">
+                <Dataset v-if="visibleType == 'dataset'" v-bind:datasetName="visibleDataset" />
+                <Chart v-else-if="visibleType == 'chart'" v-bind:chartName="visibleChart"/>
+                <h2 v-else>Click on a dataset or chart to display it</h2>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
-import LineChart from './charts/LineChart'
-import BarChart from './charts/BarChart'
+import axios from 'axios'
+import Dataset from './components/Dataset'
+import Chart from './components/Chart'
 
 export default {
     name: 'app',
     components: {
-        LineChart,
-        BarChart
+        Dataset,
+        Chart
     },
-    data: function() {
+    data() {
         return {
-            barData: {
-                labels: ['0-5', '6-10', '11-15', '16-20', '21+'],
-                datasets: [
-                    {
-                        label: 'Session Time (in minutes)',
-                        backgroundColor: ['#3e95cd', '#8e5ea2', '#3cba9f', '#e8c3b9', '#c45850'],
-                        data: [10, 8, 5, 1, 0]
-                    }
-                ]
-            },
-            barOptions: {
-                responsive: false,
-                maintainAspectRatio: false,
-                scales: {
-                    yAxes: [{
-                        beginAtZero: true
-                    }]
-                },
-                legend: { display: false },
-                title: {
-                    display: true,
-                    text: 'Manticore Session Time Frequency (in minutes)'
-                }
-            },
-            lineData: {
-                datasets: [
-                    {
-                        label: 'Requests',
-                        borderColor: '#ff0000',
-                        pointBackgroundColor: '#ff0000',
-                        pointBorderColor: '#ff0000',
-                        fill: false,
-                        data: [
-                            { x: Date.now(), y: 0 },
-                            { x: Date.now() + (1 * 60000), y: 1 },
-                            { x: Date.now() + (2 * 60000), y: 1 },
-                            { x: Date.now() + (3 * 60000), y: 2 },
-                            { x: Date.now() + (4 * 60000), y: 3 },
-                            { x: Date.now() + (5 * 60000), y: 7 },
-                            { x: Date.now() + (6 * 60000), y: 6 },
-                        ]
-                    },
-                    {
-                        label: 'Allocations',
-                        borderColor: '#00ff00',
-                        pointBackgroundColor: '#00ff00',
-                        pointBorderColor: '#00ff00',
-                        fill: false,
-                        data: [
-                            { x: Date.now(), y: 0 },
-                            { x: Date.now() + (1 * 60000), y: 0 },
-                            { x: Date.now() + (2 * 60000), y: 1 },
-                            { x: Date.now() + (3 * 60000), y: 1 },
-                            { x: Date.now() + (4 * 60000), y: 3 },
-                            { x: Date.now() + (5 * 60000), y: 5 },
-                            { x: Date.now() + (6 * 60000), y: 6 },
-                        ]
-                    }
-                ]
-            },
-            lineOptions: {
-                responsive: false,
-                maintainAspectRatio: false,
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }],
-                    xAxes: [{
-                        type: 'time',
-                        time: {
-                            unit: 'minute',
-                            displayFormats: {
-                                minute: 'h:mm a'
-                            }
-                        }
-                    }]
-                },
-                elements: {
-                    line: {
-                        tension: 0
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Manticore Requests/Allocations'
-                }
-            }
+            datasets: [],
+            datasetError: null,
+            charts: [],
+            chartError: null,
+            visibleType: null,
+            visibleChart: null,
+            visibleDataset: null
+        }
+    },
+    created() {
+        this.fetchDatasets()
+        this.fetchCharts()
+    },
+    methods: {
+        fetchDatasets() {
+            axios.get('http://localhost:3000/datasets')
+                .then((datasets) => {
+                    this.datasets = datasets.data.datasets.sort((d1, d2) => {
+                        if (d1.name < d2.name) return -1
+                        if (d1.name > d2.name) return 1
+                        return 0
+                    })
+                    this.datasetError = null
+                })
+                .catch((error) => {
+                    this.datasetError = error
+                    this.datasets = []
+                })
+        },
+        fetchCharts() {
+            axios.get('http://localhost:3000/charts')
+                .then((charts) => {
+                    this.charts = charts.data.charts.sort((c1, c2) => {
+                        if (c1.name < c2.name) return -1
+                        if (c1.name > c2.name) return 1
+                        return 0
+                    })
+                    this.chartError = null
+                })
+                .catch((error) => {
+                    this.chartError = error
+                    this.charts = []
+                })
+        },
+        displayDataset(datasetName) {
+            this.visibleDataset = datasetName
+            this.visibleType = 'dataset'
+        },
+        displayChart(chartName) {
+            this.visibleChart = chartName
+            this.visibleType = 'chart'
         }
     }
 }
 </script>
 
 <style>
+body {
+    margin: 0;
+    padding: 0;
+}
+
 #app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-align: center;
     color: #2c3e50;
-    margin-top: 60px;
+}
+
+.chart-content {
+    margin: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+}
+
+.chart-content-list {
+    margin: 30px 15px 30px 30px;
+}
+
+.chart-content-display {
+    margin: 30px 30px 30px 15px;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
