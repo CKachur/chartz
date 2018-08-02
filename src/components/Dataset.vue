@@ -3,6 +3,7 @@
         <div v-if="dataset != null">
             <h2>{{ dataset.name }}</h2>
             <p v-for="dataItem in dataset.structure">{{ dataItem.dataName }} - {{ dataItem.dataType }}</p>
+            <button v-on:click="deleteDataset">Delete</button>
         </div>
         <h2 v-else>Could not retrieve '{{ datasetName }}' dataset</h2>
     </div>
@@ -14,7 +15,13 @@ import axios from 'axios'
 export default {
     name: 'Dataset',
     props: {
-        datasetName: String
+        datasetName: String,
+        backToHome: Function
+    },
+    watch: {
+        datasetName() {
+            this.fetchDataset()
+        }
     },
     data() {
         return {
@@ -37,6 +44,19 @@ export default {
                 })
                 .catch((error) => {
                     this.dataset = null
+                })
+        },
+        deleteDataset() {
+            axios.delete('http://localhost:3000/dataset', {
+                    data: {
+                        name: this.datasetName
+                    }
+                })
+                .then((response) => {
+                    this.backToHome()
+                })
+                .catch((error) => {
+                    console.log(error)
                 })
         }
     }

@@ -7,6 +7,7 @@
             <BarChart v-if="barOptions && barData"
                 :data="barData"
                 :options="barOptions" />
+            <button v-on:click="deleteChart">Delete</button>
         </div>
         <h2 v-else>Could not retrieve '{{ chartName }}' chart</h2>
     </div>
@@ -24,7 +25,13 @@ export default {
         BarChart
     },
     props: {
-        chartName: String
+        chartName: String,
+        backToHome: Function
+    },
+    watch: {
+        chartName() {
+            this.fetchChart()
+        }
     },
     data() {
         return {
@@ -42,6 +49,10 @@ export default {
     },
     methods: {
         fetchChart() {
+            this.lineData = null
+            this.lineOptions = null
+            this.barData = null
+            this.barOptions = null
             axios.get('http://localhost:3000/charts')
                 .then((charts) => {
                     for (let i = 0; i < charts.data.charts.length; i++) {
@@ -65,6 +76,19 @@ export default {
                 })
                 .catch((error) => {
                     this.chart = null
+                })
+        },
+        deleteChart() {
+            axios.delete('http://localhost:3000/chart', {
+                    data: {
+                        name: this.chartName
+                    }
+                })
+                .then((response) => {
+                    this.backToHome()
+                })
+                .catch((error) => {
+                    console.log(error)
                 })
         },
         setupChart() {

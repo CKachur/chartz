@@ -2,24 +2,38 @@
     <div id="app">
         <div class="chart-content">
             <div class="chart-content-list">
-                <h2>Datasets</h2>
-                <button v-on:click="fetchDatasets">Refresh</button>
+                <div class="list-header">
+                    <h2 class="list-title">Datasets</h2>
+                    <button v-on:click="addDataset" class="list-button">Add</button>
+                    <button v-on:click="fetchDatasets" class="list-button">Refresh</button>
+                </div>
                 <p v-if="datasetError">Cannot retrieve datasets</p>
                 <div v-for="dataset in datasets" v-on:click="displayDataset(dataset.name)">
                     <p>{{ dataset.name }}</p>
                 </div>
 
-                <h2>Charts</h2>
-                <button v-on:click="fetchCharts">Refresh</button>
+                <div class="list-header">
+                    <h2 class="list-title">Charts</h2>
+                    <button v-on:click="addChart" class="list-button">Add</button>
+                    <button v-on:click="fetchCharts" class="list-button">Refresh</button>
+                </div>
                 <p v-if="chartError">Cannot retrieve charts</p>
                 <div v-for="chart in charts" v-on:click="displayChart(chart.name)">
                     <p>{{ chart.name }}</p>
                 </div>
             </div>
             <div class="chart-content-display">
-                <Dataset v-if="visibleType == 'dataset'" v-bind:datasetName="visibleDataset" />
-                <Chart v-else-if="visibleType == 'chart'" v-bind:chartName="visibleChart"/>
-                <h2 v-else>Click on a dataset or chart to display it</h2>
+                <Dataset v-if="visibleType == 'dataset'"
+                    v-bind:datasetName="visibleDataset"
+                    v-bind:backToHome="returnFromDataset"/>
+                <Chart v-else-if="visibleType == 'chart'"
+                    v-bind:chartName="visibleChart"
+                    v-bind:backToHome="returnFromAddChart"/>
+                <AddDataset v-else-if="visibleType == 'addDataset'"
+                    v-bind:backToHome="returnFromAddDataset"/>
+                <AddChart v-else-if="visibleType == 'addChart'"
+                    v-bind:backToHome="returnFromAddChart"/>
+                <h2 v-else>Select a Dataset or Chart to view.</h2>
             </div>
         </div>
     </div>
@@ -29,12 +43,16 @@
 import axios from 'axios'
 import Dataset from './components/Dataset'
 import Chart from './components/Chart'
+import AddDataset from './components/AddDataset'
+import AddChart from './components/AddChart'
 
 export default {
     name: 'app',
     components: {
         Dataset,
-        Chart
+        Chart,
+        AddDataset,
+        AddChart
     },
     data() {
         return {
@@ -89,6 +107,25 @@ export default {
         displayChart(chartName) {
             this.visibleChart = chartName
             this.visibleType = 'chart'
+        },
+        addDataset() {
+            this.visibleType = 'addDataset'
+        },
+        addChart() {
+            this.visibleType = 'addChart'
+        },
+        returnFromDataset() {
+            this.visibleType = null
+            this.fetchDatasets()
+            this.fetchCharts()
+        },
+        returnFromAddDataset() {
+            this.visibleType = null
+            this.fetchDatasets()
+        },
+        returnFromAddChart() {
+            this.visibleType = null
+            this.fetchCharts()
         }
     }
 }
@@ -124,5 +161,20 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.list-header {
+    display: flex;
+    flex-direction: row;
+}
+
+.list-title {
+    margin: 0px 10px 0px 0px;
+    padding: 0;
+    flex-grow: 1;
+}
+
+.list-button {
+    margin-left: auto;
 }
 </style>
